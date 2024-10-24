@@ -1,16 +1,12 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@std/cli@*": "1.0.6",
-    "npm:@types/node@*": "22.5.4"
+    "jsr:@std/cli@*": "1.0.6"
   },
   "jsr": {
     "@std/cli@1.0.6": {
       "integrity": "d22d8b38c66c666d7ad1f2a66c5b122da1704f985d3c47f01129f05abb6c5d3d"
     }
-  },
-  "redirects": {
-    "https://deno.land/x/zod/mod.ts": "https://deno.land/x/zod@v3.23.8/mod.ts"
   },
   "remote": {
     "https://deno.land/x/zod@v3.23.8/ZodError.ts": "528da200fbe995157b9ae91498b103c4ef482217a5c086249507ac850bd78f52",

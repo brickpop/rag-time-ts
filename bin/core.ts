@@ -9,29 +9,49 @@ import {
   parseCoreVectorStoreQuery,
   parseCoreVectorStoreAdd,
 } from "../lib/common/data-schema.ts";
+import { QdrantStore } from "../lib/vector-store/qdrant.ts";
+import type { Doc } from "../lib/common/types.ts";
+import { ParserId } from "../lib/common/enums.ts";
 
 type Parameters = {
   port: number;
-  help: boolean;
   authToken: string;
+  storeUrl: string;
+};
+const parameters: Parameters = {
+  port: DEFAUT_CORE_SERVICE_PORT,
+  authToken: "",
+  storeUrl: "",
 };
 
 function main() {
-  const { port, help, authToken } = getParameters();
+  const params = getParameters();
 
-  if (help) {
+  if (params.help) {
     return showHelp();
   }
 
-  runService(port, authToken);
+  // Warnings
+  if (!params.authToken || !params.authToken.trim()) {
+    console.warn("Warning: The service is running without an auth token");
+  } else if (!params.storeUrl || !params.storeUrl.trim()) {
+    console.error("Error: The store URL cannot be empty");
+    return showHelp();
+  }
+
+  parameters.port = params.port!;
+  parameters.authToken = params.authToken!;
+  parameters.storeUrl = params.storeUrl!;
+
+  startService();
 }
 
-function runService(port: number, authToken: string) {
-  Deno.serve({ port }, async (req: Request) => {
+function startService() {
+  Deno.serve({ port: parameters.port }, async (req: Request) => {
     try {
       const url = new URL(req.url);
 
-      const authorized = validAuthToken(req, authToken);
+      const authorized = validAuthToken(req, parameters.authToken);
 
       // Root: status
       if (url.pathname === "/") {
@@ -62,7 +82,7 @@ function runService(port: number, authToken: string) {
           return errorResponse("Method not implemented");
         }
         const body = (await readStream(req.body)) || "{}";
-        return handleIndexDocument(JSON.parse(body));
+        return handleAddDocument(JSON.parse(body));
       }
 
       return errorResponse("Not found", 404);
@@ -72,35 +92,32 @@ function runService(port: number, authToken: string) {
   });
 }
 
-function getParameters(): Parameters {
-  const { port, help, authToken } = parseArgs(Deno.args, {
-    string: ["port", "authToken"],
+/** Parses the CLI arguments */
+function getParameters() {
+  const { port, help, authToken, storeUrl } = parseArgs(Deno.args, {
+    string: ["port", "authToken", "storeUrl"],
     boolean: ["help"],
     default: { port: DEFAUT_CORE_SERVICE_PORT.toString() },
     alias: {
       p: "port",
       h: "help",
       "auth-token": "authToken",
+      "store-url": "storeUrl",
     },
   });
 
   if (help) {
-    return { help: true, port: 0, authToken: "" };
+    return { help: true };
   }
 
   if (isNaN(parseInt(port))) {
     throw new Error("Invalid port: " + port);
   }
 
-  // Warnings
-  if (!authToken || !authToken.trim()) {
-    console.warn("Warning: The service is running without an auth token");
-  }
-
   return {
     port: parseInt(port),
-    help,
     authToken: authToken || "",
+    storeUrl: storeUrl || "",
   };
 }
 
@@ -113,32 +130,55 @@ function handleStatus(authorized: boolean) {
 }
 
 /** Called by reader nodes */
-function handleVectoreStoreQuery(body: any) {
+async function handleVectoreStoreQuery(body: any) {
   const { success, error, data } = parseCoreVectorStoreQuery(body);
   if (!success) {
     return errorResponse("Invalid request: " + error);
   }
 
-  // TODO:
-  throw new Error("Unimplemented");
+  const store = new QdrantStore(parameters.storeUrl);
+  const docs = await store.query(data.query);
+  return jsonResponse(docs as any);
 }
 
 /** Called by writer nodes */
-function handleIndexDocument(body: any) {
+async function handleAddDocument(body: any) {
   const { success, error, data } = parseCoreVectorStoreAdd(body);
   if (!success) {
     return errorResponse("Invalid request: " + error);
   }
 
-  // TODO:
-  throw new Error("Unimplemented");
+  const store = new QdrantStore(parameters.storeUrl);
+  const docs = splitDocument(data.name, data.content, data.tags, data.origin);
+  await store.add(docs);
+  return jsonResponse({});
 }
 
 // Helpers
 
+function splitDocument(
+  name: string,
+  content: string,
+  tags: string[],
+  origin: string
+): Array<Doc> {
+  // TODO:
+  throw new Error("Unimplemented");
+  return [
+    {
+      content: "",
+      metadata: {
+        parser: ParserId.MARKDOWN,
+        tags,
+      },
+      origin,
+    },
+  ];
+}
+
 function showHelp() {
   console.log(`Usage:
-$ deno run -A bin/core -p <port> --auth-token <token>`);
+$ deno run --allow-net bin/core.ts -p <port> --store-url <url> --auth-token <token>`);
 }
 
 // Main

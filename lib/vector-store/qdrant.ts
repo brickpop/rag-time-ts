@@ -8,10 +8,10 @@ export class QdrantStore implements IVectorStore {
     // Define parameters
   }
 
-  async ingest(docs: Array<Doc>): Promise<void> {
+  async add(docs: Array<Doc>): Promise<void> {
     //
   }
-  async search(query: string): Promise<Array<Doc>> {
+  async query(question: string): Promise<Array<Doc>> {
     //
     return [];
   }

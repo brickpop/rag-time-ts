@@ -1,11 +1,12 @@
-import { ParserId } from "../../common/enums.ts";
+import { SourceFormats } from "../../common/enums.ts";
 import type { Doc } from "../../common/types.ts";
 import type { IParser } from "../../interfaces/parser.ts";
 
 export class PlainTextParser implements IParser {
-  id = ParserId.PLAIN_TEXT;
+  name = "Plain text parser";
+  sourceFormat = SourceFormats.PLAIN_TEXT;
 
-  parse(data: string | Uint8Array, origin?: string): Doc | Promise<Doc> {
+  parse(data: string | Uint8Array, docNameOrUrl = ""): Doc | Promise<Doc> {
     // Already the format we want
     let content: string;
 
@@ -19,10 +20,10 @@ export class PlainTextParser implements IParser {
     return {
       content,
       metadata: {
-        parser: this.id,
+        name: docNameOrUrl,
+        sourceFormat: this.sourceFormat,
         tags: [],
       },
-      origin: origin || "",
     };
   }
 }

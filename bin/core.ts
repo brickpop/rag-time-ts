@@ -10,8 +10,7 @@ import {
   parseCoreVectorStoreAdd,
 } from "../lib/common/data-schema.ts";
 import { QdrantStore } from "../lib/vector-store/qdrant.ts";
-import type { Doc } from "../lib/common/types.ts";
-import { ParserId } from "../lib/common/enums.ts";
+import { splitDocument } from "../lib/embedding/index.ts";
 
 type Parameters = {
   port: number;
@@ -149,32 +148,12 @@ async function handleAddDocument(body: any) {
   }
 
   const store = new QdrantStore(parameters.storeUrl);
-  const docs = splitDocument(data.name, data.content, data.tags, data.origin);
+  const docs = await splitDocument(data.content, data.metadata);
   await store.add(docs);
   return jsonResponse({});
 }
 
 // Helpers
-
-function splitDocument(
-  name: string,
-  content: string,
-  tags: string[],
-  origin: string
-): Array<Doc> {
-  // TODO:
-  throw new Error("Unimplemented");
-  return [
-    {
-      content: "",
-      metadata: {
-        parser: ParserId.MARKDOWN,
-        tags,
-      },
-      origin,
-    },
-  ];
-}
 
 function showHelp() {
   console.log(`Usage:

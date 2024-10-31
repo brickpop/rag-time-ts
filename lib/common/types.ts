@@ -1,14 +1,17 @@
 import type { VECTOR_STORE_ENGINES } from "./constants.ts";
-import { ParserId } from "./enums.ts";
+import { SourceFormats } from "./enums.ts";
 
 export type Doc = {
+  /** The plan text or Markdown contents */
   content: string;
   metadata: {
+    /** The name or URL of the original document */
+    name: string;
+    /** Arbitrary tags used for filtering later on */
     tags: Array<string>;
-    parser: ParserId;
+    sourceFormat: SourceFormats;
     [k: string]: string | Array<string>;
   };
-  origin: string;
 };
 
 // Generic

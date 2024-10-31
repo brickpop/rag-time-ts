@@ -1,4 +1,4 @@
-export async function readStream(stream: ReadableStream<Uint8Array> | null) {
+export async function readStream(stream: ReadableStream<Uint8Array> | null): Promise<string> {
   if (!stream) return "";
 
   let result = "";

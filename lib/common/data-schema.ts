@@ -1,5 +1,5 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
-import { ParserId } from "./enums.ts";
+import { SourceFormats } from "./enums.ts";
 
 export function parseCoreVectorStoreQuery(body: any) {
   return CoreVectorStoreQuery.safeParse(body);
@@ -16,9 +16,14 @@ const CoreVectorStoreQuery = z.object({
 });
 
 const CoreVectorStoreAdd = z.object({
-  name: z.string().min(1),
+  /** Plain text or markdown contents of the document */
   content: z.string().min(1),
-  tags: z.array(z.string().min(1)),
-  parser: z.string(),
-  origin: z.string(),
+  metadata: z.object({
+    /** Name of the document or URL of the source */
+    name: z.string().min(1),
+    /** A list of tags to assign to the document */
+    tags: z.array(z.string().min(1)),
+    /** The format of the originally parsed document */
+    sourceFormat: z.string().default(SourceFormats.PLAIN_TEXT),
+  }),
 });

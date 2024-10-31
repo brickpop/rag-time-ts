@@ -1,0 +1,17 @@
+volumes:
+  qdrant_storage:
+  minio_data:
+
+networks:
+  rag_network:
+
+services:
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    networks: ["rag_network"]
+    restart: unless-stopped
+    ports:
+      - 6333:6333
+    volumes:
+      - qdrant_storage:/qdrant/storage

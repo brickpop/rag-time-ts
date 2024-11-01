@@ -67,8 +67,8 @@
         "form-data"
       ]
     },
-    "@types/node@18.19.62": {
-      "integrity": "sha512-UOGhw+yZV/icyM0qohQVh3ktpY40Sp7tdTW7HxG3pTd7AiMrlFlAJNUrGK9t5mdW0+ViQcFV74zCSIx9ZJpncA==",
+    "@types/node@18.19.63": {
+      "integrity": "sha512-hcUB7THvrGmaEcPcvUZCZtQ2Z3C+UR/aOcraBLCvTsFMh916Gc1kCCYcfcMuB76HM2pSerxl1PoP3KnmHzd9Lw==",
       "dependencies": [
         "undici-types@5.26.5"
       ]
@@ -229,7 +229,7 @@
     "openai@4.69.0_zod@3.23.8": {
       "integrity": "sha512-S3hOHSkk609KqwgH+7dwFrSvO3Gm3Nk0YWGyPHNscoMH/Y2tH1qunMi7gtZnLbUv4/N1elqCp6bDior2401kCQ==",
       "dependencies": [
-        "@types/node@18.19.62",
+        "@types/node@18.19.63",
         "@types/node-fetch",
         "abort-controller",
         "agentkeepalive",
@@ -326,7 +326,11 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@1"
+      "jsr:@std/assert@1",
+      "jsr:@std/fs@^1.0.3",
+      "jsr:@std/path@^1.0.4",
+      "npm:chromadb@^1.9.1",
+      "npm:ollama@~0.5.9"
     ]
   }
 }

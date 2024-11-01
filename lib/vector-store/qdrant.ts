@@ -1,5 +1,5 @@
 import type { Doc } from "../common/types.ts";
-import { type IVectorStore } from "../interfaces/vector-store.ts";
+import { DocMetadata, type IVectorStore } from "../interfaces/vector-store.ts";
 
 const VECTOR_SIZE = 768;
 const VECTOR_DISTANCE = "Cosine";
@@ -25,7 +25,7 @@ export class QdrantStore implements IVectorStore {
     });
   }
 
-  async add(docs: Array<Doc>): Promise<void> {
+  async add(content: string, metadata: DocMetadata): Promise<Array<string>> {
     //
   }
 

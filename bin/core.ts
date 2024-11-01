@@ -1,7 +1,10 @@
 // VECTOR STORE API SERVICE
 
 import { parseArgs } from "jsr:@std/cli/parse-args";
-import { DEFAUT_CORE_SERVICE_PORT } from "../lib/common/constants.ts";
+import {
+  DEFAUT_CORE_SERVICE_PORT,
+  VECTORE_STORE_COLLECTION_NAME,
+} from "../lib/common/constants.ts";
 import { errorResponse, jsonResponse } from "../lib/common/wrappers.ts";
 import { readStream } from "../lib/common/stream.ts";
 import { validAuthToken } from "../lib/auth/auth.ts";
@@ -9,8 +12,7 @@ import {
   parseCoreVectorStoreQuery,
   parseCoreVectorStoreAdd,
 } from "../lib/common/data-schema.ts";
-import { QdrantStore } from "../lib/vector-store/qdrant.ts";
-import { splitDocument } from "../lib/embedding/index.ts";
+import { ChromaStore } from "../lib/vector-store/chroma.ts";
 
 type Parameters = {
   port: number;
@@ -135,7 +137,10 @@ async function handleVectoreStoreQuery(body: any) {
     return errorResponse("Invalid request: " + error);
   }
 
-  const store = new QdrantStore(parameters.storeUrl);
+  const store = new ChromaStore(
+    VECTORE_STORE_COLLECTION_NAME,
+    parameters.storeUrl
+  );
   const docs = await store.query(data.query);
   return jsonResponse(docs as any);
 }
@@ -147,9 +152,11 @@ async function handleAddDocument(body: any) {
     return errorResponse("Invalid request: " + error);
   }
 
-  const store = new QdrantStore(parameters.storeUrl);
-  const docs = await splitDocument(data.content, data.metadata);
-  await store.add(docs);
+  const store = new ChromaStore(
+    VECTORE_STORE_COLLECTION_NAME,
+    parameters.storeUrl
+  );
+  await store.add(data.content, data.metadata);
   return jsonResponse({});
 }
 

@@ -72,13 +72,13 @@ function startService() {
       }
 
       // Search vector store
-      else if (url.pathname === "/api/qdrant/query") {
+      else if (url.pathname === "/api/chroma/query") {
         if (req.method !== "POST") {
           return errorResponse("Method not implemented");
         }
         const body = (await readStream(req.body)) || "{}";
         return handleVectoreStoreQuery(JSON.parse(body));
-      } else if (url.pathname === "/api/qdrant/documents") {
+      } else if (url.pathname === "/api/chroma/documents") {
         if (req.method !== "POST") {
           return errorResponse("Method not implemented");
         }

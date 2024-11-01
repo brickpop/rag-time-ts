@@ -1,36 +1,35 @@
-import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
 import { Doc } from "../lib/common/types.ts";
 import { SourceFormats } from "../lib/common/enums.ts";
+import { HTMLParser } from "../lib/writer/index.ts";
+
+const SERVER_URL = "http://localhost:3000";
 
 // VECTOR WRITER SERVICE
 
 async function main() {
   const docs = getStaticDocs();
-  const webDocs = [
-    await loadUrlText(urls[0]),
-    await loadUrlText(urls[1]),
-    await loadUrlText(urls[2]),
+
+  const urls = [
+    "https://lilianweng.github.io/posts/2023-06-23-agent/",
+    "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
+    "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
   ];
+  docs.push(await loadUrlText(urls[0]));
+  docs.push(await loadUrlText(urls[1]));
+  docs.push(await loadUrlText(urls[2]));
+
+  for (const doc of docs) {
+    await fetch(SERVER_URL + "/api/chroma/documents", {
+      method: "POST",
+      body: JSON.stringify(doc),
+    });
+  }
 }
 
-const urls = [
-  "https://lilianweng.github.io/posts/2023-06-23-agent/",
-  "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-  "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-];
-
-async function loadUrlText(url: string) {
-  const html = await fetch(new URL(url), {
-    redirect: "follow",
-    headers: {
-      Accept: "text/html",
-    },
-  }).then((res) => {
-    return res.text();
-  });
-
-  const $ = cheerio.load(html);
-  return $("content").text();
+async function loadUrlText(url: string): Promise<Doc> {
+  const parser = new HTMLParser();
+  const html = await parser.fetchText(url);
+  return parser.parse(html, url);
 }
 
 function getStaticDocs(): Array<Doc> {

@@ -13,7 +13,7 @@ const QUESTIONS = [
 ];
 
 async function main() {
-  const res = await fetch(SERVER_URL + "/api/chroma/query", {
+  const res = await fetch(SERVER_URL + "/api/query", {
     method: "POST",
     body: JSON.stringify({ query: QUESTIONS[0] }),
   }).then((res) => res.json());

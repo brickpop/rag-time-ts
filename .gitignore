@@ -1,3 +1,5 @@
+input/
+
 logs
 _.log
 lib-cov

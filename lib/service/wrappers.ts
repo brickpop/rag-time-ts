@@ -1,4 +1,4 @@
-import type { JsonValue } from "./types.ts";
+import type { JsonValue } from "../common/types.ts";
 
 export function jsonResponse(response: JsonValue, code = 200) {
   const body = JSON.stringify({ response, ok: true });

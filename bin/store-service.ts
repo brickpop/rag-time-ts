@@ -4,7 +4,7 @@ import {
   VECTORE_STORE_COLLECTION_NAME,
   DEFAULT_STORE_URL,
 } from "../lib/common/constants.ts";
-import { StoreService } from "../lib/service/store.ts";
+import { StoreService } from "../lib/service/index.ts";
 import { QdrantStore } from "../lib/vector-store/qdrant.ts";
 // import { ChromaStore } from "../lib/vector-store/chroma.ts";
 

@@ -5,6 +5,7 @@ import { getEmbeddings, splitContent } from "../embedding/index.ts";
 import { DocMetadata, type IVectorStore } from "../interfaces/vector-store.ts";
 import { QdrantClient } from "@qdrant/js-client-rest";
 // import { crypto } from "https://deno.land/std@0.106.0/crypto/mod.ts";
+import { randomUUID } from "node:crypto";
 
 const VECTOR_SIZE = 768;
 const VECTOR_DISTANCE = "Cosine";

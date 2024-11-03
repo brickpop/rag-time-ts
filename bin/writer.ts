@@ -14,14 +14,14 @@ async function main() {
   //   "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
   //   "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
   // ];
-  // docs.push(await loadUrlText(urls[0]));
-  // docs.push(await loadUrlText(urls[1]));
-  // docs.push(await loadUrlText(urls[2]));
+  // docs.push(await loadTextFromHtmlUrl(urls[0]));
+  // docs.push(await loadTextFromHtmlUrl(urls[1]));
+  // docs.push(await loadTextFromHtmlUrl(urls[2]));
 
   const files = ["./input/1.html", "./input/2.html", "./input/3.html"];
   await Promise.all(
     files.map((file) => {
-      return loadHtmlFile(file);
+      return loadTextFromHtmlFile(file);
     })
   ).then((loadedDocs) => {
     for (const doc of loadedDocs) {
@@ -37,13 +37,12 @@ async function main() {
   }
 }
 
-async function loadUrlText(url: string): Promise<Doc> {
+function loadTextFromHtmlUrl(url: string): Promise<Doc> {
   const parser = new HTMLParser();
-  const html = await parser.fetchText(url);
-  return parser.parse(html, url);
+  return parser.fetchRaw(url).then((html) => parser.parse(html, url));
 }
 
-function loadHtmlFile(path: string): Promise<Doc> {
+function loadTextFromHtmlFile(path: string): Promise<Doc> {
   const parser = new HTMLParser();
   return Deno.readTextFile(path).then((html) =>
     parser.parse(html, "file://" + path)
@@ -206,3 +205,22 @@ main().catch((err) => {
   console.error(err);
   Deno.exit(1);
 });
+
+/*
+import { walk } from "@std/fs";
+
+async function readTextFiles(
+	directory: string,
+): Promise<Record<string, string>> {
+	const textContents: Record<string, string> = {};
+
+	for await (const entry of walk(directory, { exts: [".txt"] })) {
+		if (entry.isFile) {
+			const content = await Deno.readTextFile(entry.path);
+			textContents[entry.name] = content;
+		}
+	}
+	return textContents;
+}
+
+*/

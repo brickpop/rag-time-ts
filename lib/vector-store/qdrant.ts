@@ -3,7 +3,7 @@ import { SourceFormats } from "../common/enums.ts";
 import type { Doc } from "../common/types.ts";
 import { getEmbeddings, splitContent } from "../embedding/index.ts";
 import { DocMetadata, type IVectorStore } from "../interfaces/vector-store.ts";
-import { QdrantClient } from "https://esm.sh/@qdrant/js-client-rest";
+import { QdrantClient } from "@qdrant/js-client-rest";
 // import { crypto } from "https://deno.land/std@0.106.0/crypto/mod.ts";
 
 const VECTOR_SIZE = 768;
@@ -35,7 +35,7 @@ export class QdrantStore implements IVectorStore {
       .upsert(this.collection, {
         wait: true,
         points: items.map((item, idx) => ({
-          id: getNewId(),
+          id: randomUUID(),
           vector: item.vector,
           payload: item.doc,
         })),

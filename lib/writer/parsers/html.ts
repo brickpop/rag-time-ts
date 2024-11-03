@@ -1,7 +1,7 @@
 import { SourceFormats } from "../../common/enums.ts";
 import type { Doc } from "../../common/types.ts";
 import type { IParser } from "../../interfaces/parser.ts";
-import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
+import * as cheerio from "cheerio";
 
 export class HTMLParser implements IParser {
   name = "HTML Parser";
@@ -16,6 +16,12 @@ export class HTMLParser implements IParser {
       content = decoder.decode(html);
     }
 
+    const $ = cheerio.load(content);
+    $("script").remove();
+    $("noscript").remove();
+    $("img").remove();
+    content = $("body").text();
+
     return {
       content,
       metadata: {
@@ -27,19 +33,14 @@ export class HTMLParser implements IParser {
     };
   }
 
-  fetchText(url: string): Promise<string> {
-    return fetch(new URL(url), {
+  fetchRaw(url: string): Promise<string> {
+    return fetch(url, {
       redirect: "follow",
       headers: {
         Accept: "text/html",
       },
-    })
-      .then((res) => {
-        return res.text();
-      })
-      .then((html) => {
-        const $ = cheerio.load(html);
-        return $("content").text();
-      });
+    }).then((res) => {
+      return res.text();
+    });
   }
 }

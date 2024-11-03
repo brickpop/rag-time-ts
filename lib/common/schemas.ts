@@ -1,21 +1,26 @@
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { SourceFormats } from "./enums.ts";
 
-export function parseCoreVectorStoreQuery(body: any) {
-  return CoreVectorStoreQuery.safeParse(body);
+export function parseStoreQuery(body: any) {
+  return StoreQuery.safeParse(body);
 }
 
-export function parseCoreVectorStoreAdd(body: any) {
-  return CoreVectorStoreAdd.safeParse(body);
+export function parseStoreAdd(body: any) {
+  return StoreAdd.safeParse(body);
 }
+
+// Types
+
+export type StoreAdd = z.infer<typeof StoreAdd>;
+export type StoreQuery = z.infer<typeof StoreQuery>;
 
 // Schemas
 
-const CoreVectorStoreQuery = z.object({
+const StoreQuery = z.object({
   query: z.string().min(1),
 });
 
-const CoreVectorStoreAdd = z.object({
+const StoreAdd = z.object({
   /** Plain text or markdown contents of the document */
   content: z.string().min(1),
   metadata: z

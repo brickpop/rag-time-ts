@@ -4,6 +4,7 @@ import { parseArgs } from "jsr:@std/cli/parse-args";
 import {
   DEFAUT_CORE_SERVICE_PORT,
   VECTORE_STORE_COLLECTION_NAME,
+  DEFAULT_STORE_URL,
 } from "../lib/common/constants.ts";
 import { errorResponse, jsonResponse } from "../lib/common/wrappers.ts";
 import { readStream } from "../lib/common/stream.ts";
@@ -12,7 +13,8 @@ import {
   parseCoreVectorStoreQuery,
   parseCoreVectorStoreAdd,
 } from "../lib/common/data-schema.ts";
-import { ChromaStore } from "../lib/vector-store/chroma.ts";
+// import { ChromaStore } from "../lib/vector-store/chroma.ts";
+import { QdrantStore } from "../lib/vector-store/qdrant.ts";
 
 type Parameters = {
   port: number;
@@ -24,6 +26,7 @@ const parameters: Parameters = {
   authToken: "",
   storeUrl: "",
 };
+let store: QdrantStore;
 
 function main() {
   const params = getParameters();
@@ -47,7 +50,12 @@ function main() {
   startService();
 }
 
-function startService() {
+async function startService() {
+  // Store
+  store = new QdrantStore(VECTORE_STORE_COLLECTION_NAME, parameters.storeUrl);
+  await store.ensureCollection();
+
+  // Requests
   Deno.serve({ port: parameters.port }, async (req: Request) => {
     try {
       const url = new URL(req.url);
@@ -72,13 +80,13 @@ function startService() {
       }
 
       // Search vector store
-      else if (url.pathname === "/api/chroma/query") {
+      else if (url.pathname === "/api/query") {
         if (req.method !== "POST") {
           return errorResponse("Method not implemented");
         }
         const body = (await readStream(req.body)) || "{}";
         return handleVectoreStoreQuery(JSON.parse(body));
-      } else if (url.pathname === "/api/chroma/documents") {
+      } else if (url.pathname === "/api/documents") {
         if (req.method !== "POST") {
           return errorResponse("Method not implemented");
         }
@@ -98,7 +106,10 @@ function getParameters() {
   const { port, help, authToken, storeUrl } = parseArgs(Deno.args, {
     string: ["port", "authToken", "storeUrl"],
     boolean: ["help"],
-    default: { port: DEFAUT_CORE_SERVICE_PORT.toString() },
+    default: {
+      port: DEFAUT_CORE_SERVICE_PORT.toString(),
+      storeUrl: DEFAULT_STORE_URL,
+    },
     alias: {
       p: "port",
       h: "help",
@@ -137,10 +148,6 @@ async function handleVectoreStoreQuery(body: any) {
     return errorResponse("Invalid request: " + error);
   }
 
-  const store = new ChromaStore(
-    VECTORE_STORE_COLLECTION_NAME,
-    parameters.storeUrl
-  );
   const docs = await store.query(data.query);
   return jsonResponse(docs as any);
 }
@@ -149,13 +156,9 @@ async function handleVectoreStoreQuery(body: any) {
 async function handleAddDocument(body: any) {
   const { success, error, data } = parseCoreVectorStoreAdd(body);
   if (!success) {
-    return errorResponse("Invalid request: " + error);
+    return errorResponse("Invalid request: " + error.message);
   }
 
-  const store = new ChromaStore(
-    VECTORE_STORE_COLLECTION_NAME,
-    parameters.storeUrl
-  );
   await store.add(data.content, data.metadata);
   return jsonResponse({});
 }

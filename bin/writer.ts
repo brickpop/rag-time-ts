@@ -9,17 +9,28 @@ const SERVER_URL = "http://localhost:3000";
 async function main() {
   const docs = getStaticDocs();
 
-  const urls = [
-    "https://lilianweng.github.io/posts/2023-06-23-agent/",
-    "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
-    "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
-  ];
-  docs.push(await loadUrlText(urls[0]));
-  docs.push(await loadUrlText(urls[1]));
-  docs.push(await loadUrlText(urls[2]));
+  // const urls = [
+  //   "https://lilianweng.github.io/posts/2023-06-23-agent/",
+  //   "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
+  //   "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+  // ];
+  // docs.push(await loadUrlText(urls[0]));
+  // docs.push(await loadUrlText(urls[1]));
+  // docs.push(await loadUrlText(urls[2]));
+
+  const files = ["./input/1.html", "./input/2.html", "./input/3.html"];
+  await Promise.all(
+    files.map((file) => {
+      return loadHtmlFile(file);
+    })
+  ).then((loadedDocs) => {
+    for (const doc of loadedDocs) {
+      docs.push(doc);
+    }
+  });
 
   for (const doc of docs) {
-    await fetch(SERVER_URL + "/api/chroma/documents", {
+    await fetch(SERVER_URL + "/api/documents", {
       method: "POST",
       body: JSON.stringify(doc),
     });
@@ -30,6 +41,13 @@ async function loadUrlText(url: string): Promise<Doc> {
   const parser = new HTMLParser();
   const html = await parser.fetchText(url);
   return parser.parse(html, url);
+}
+
+function loadHtmlFile(path: string): Promise<Doc> {
+  const parser = new HTMLParser();
+  return Deno.readTextFile(path).then((html) =>
+    parser.parse(html, "file://" + path)
+  );
 }
 
 function getStaticDocs(): Array<Doc> {

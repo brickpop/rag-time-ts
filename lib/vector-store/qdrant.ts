@@ -1,53 +1,94 @@
+import { RAG_SEARCH_RESULT_COUNT } from "../common/constants.ts";
+import { SourceFormats } from "../common/enums.ts";
 import type { Doc } from "../common/types.ts";
+import { getEmbeddings, splitContent } from "../embedding/index.ts";
 import { DocMetadata, type IVectorStore } from "../interfaces/vector-store.ts";
+import { QdrantClient } from "https://esm.sh/@qdrant/js-client-rest";
+// import { crypto } from "https://deno.land/std@0.106.0/crypto/mod.ts";
 
 const VECTOR_SIZE = 768;
 const VECTOR_DISTANCE = "Cosine";
 
 export class QdrantStore implements IVectorStore {
   private collection: string;
-  private url: string;
+  private client: QdrantClient;
 
-  constructor(collection: string, url: string) {
-    this.url = url;
+  constructor(collection: string, url: string, apiKey = "") {
     this.collection = collection;
 
-    // Get collections (if any)
-    this.getCollections().then((collections) => {
-      if (!collections.includes(collection)) {
-        // Create collection (if missing)
-        return this.createCollection(collection).catch((err) => {
-          // No collection: can't run
-          console.error("Canot create the collection, exiting");
-          Deno.exit(1);
-        });
-      }
-    });
+    this.client = new QdrantClient({ url, apiKey });
   }
 
   async add(content: string, metadata: DocMetadata): Promise<Array<string>> {
-    //
+    const chunks = await splitContent(content);
+
+    const items = await Promise.all(
+      chunks.map((chunk) => {
+        return getEmbeddings(chunk.content).then(([embedding]) => ({
+          vector: embedding,
+          doc: chunk,
+        }));
+      })
+    );
+
+    return this.client
+      .upsert(this.collection, {
+        wait: true,
+        points: items.map((item, idx) => ({
+          id: getNewId(),
+          vector: item.vector,
+          payload: item.doc,
+        })),
+      })
+      .then(() => {
+        return items.map(
+          (_, idx) => `${metadata.sourceFormat}-${metadata.name}-${idx}`
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+        throw err;
+      });
   }
 
   async query(question: string): Promise<Array<Doc>> {
-    //
-    return [];
+    const [queryEmbed] = await getEmbeddings(question);
+
+    const matches = await this.client.search(this.collection, {
+      vector: queryEmbed,
+      limit: RAG_SEARCH_RESULT_COUNT,
+      // filter: {
+      //   must: [
+      //     {
+      //       key: "city",
+      //       match: {
+      //         value: "xyz",
+      //       },
+      //     },
+      //   ],
+      // },
+    });
+
+    return matches.map(
+      (item) =>
+        (item.payload || {
+          content: "",
+          metadata: {
+            name: "",
+            sourceFormat: SourceFormats.PLAIN_TEXT,
+            tags: [],
+          },
+        }) as Doc
+    );
   }
 
   // Helpers
 
-  getCollections(): Promise<string> {
-    return fetch(this.url + "/collections", { method: "GET" })
-      .then((res) => res.json())
+  getCollections(): Promise<string[]> {
+    return this.client
+      .getCollections()
       .then((res) => {
-        if (res?.error) {
-          throw new Error(res.error);
-        } else if (res.status !== "ok") throw new Error(res.status);
-        else if (!Array.isArray(res.result?.collections)) {
-          throw new Error("Empty response");
-        }
-
-        return res.result.collections;
+        return res.collections.map((c) => c.name);
       })
       .catch((err) => {
         console.error(err);
@@ -55,14 +96,30 @@ export class QdrantStore implements IVectorStore {
       });
   }
 
-  createCollection(name: string): Promise<void> {
-    if (!name.match(/^[a-zA-Z0-9_]+$/)) {
-      throw new Error("Invalid collection name");
-    }
+  getCollectionInfo(name: string) {
+    return this.client.getCollection(name).catch((err) => {
+      console.error(err);
+      throw err;
+    });
+  }
 
-    return fetch(this.url + "/collections/" + name, {
-      method: "PUT",
-      body: JSON.stringify({
+  ensureCollection() {
+    // Get collections (if any)
+    return this.getCollections().then((collections) => {
+      if (!collections.includes(this.collection)) {
+        // Create collection (if missing)
+        return this.createCollection(this.collection).catch((err) => {
+          // No collection: can't run
+          console.error("Canot create the collection, exiting", err);
+          Deno.exit(1);
+        });
+      }
+    });
+  }
+
+  createCollection(name: string) {
+    return this.client
+      .createCollection(name, {
         vectors: {
           size: VECTOR_SIZE,
           distance: VECTOR_DISTANCE,
@@ -71,16 +128,6 @@ export class QdrantStore implements IVectorStore {
         //   default_segment_number: 2,
         // },
         // replication_factor: 2,
-      }),
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res?.error) {
-          throw new Error(res.error);
-        } else if (res?.status !== "ok") {
-          throw new Error("Could not create the collection");
-        }
-        // ok
       })
       .catch((err) => {
         console.error(err);
@@ -88,100 +135,11 @@ export class QdrantStore implements IVectorStore {
       });
   }
 
-  getCollectionInfo(name: string): Promise<ConnectionInfo> {
-    if (!name.match(/^[a-zA-Z0-9_]+$/)) {
-      throw new Error("Invalid collection name");
-    }
-
-    return fetch(this.url + "/collections/" + name)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res?.error) {
-          throw new Error(res.error);
-        } else if (res?.status !== "ok") {
-          throw new Error("Could not create the collection");
-        }
-
-        return res.result;
-      })
-      .catch((err) => {
-        console.error(err);
-        throw err;
-      });
-  }
-
-  addVectors(points: Array<Point>): Promise<void> {
-    const data = {
-      wait: true,
-      points,
-    };
-
-    return fetch(this.url + "/collections/" + this.collection + "/points", {
-      method: "PUT",
-      body: JSON.stringify(data),
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res?.error) {
-          throw new Error(res.error);
-        } else if (res?.status !== "ok") {
-          throw new Error("Could not create the collection");
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        throw err;
-      });
-  }
-
-  // POST collections/xxxx/points/search
+  // createIndexes() {
+  //   return this.client.createPayloadIndex(name, {
+  //     field_name: "city",
+  //     field_schema: "keyword",
+  //     wait: true,
+  //   });
+  // }
 }
-
-type Point = {
-  id?: string | number;
-  vector: Array<number>;
-  payload: string | { [k: string]: any };
-};
-
-type ConnectionInfo = {
-  status: "green";
-  optimizer_status: "ok";
-  indexed_vectors_count: number;
-  points_count: number;
-  segments_count: number;
-  config: {
-    params: {
-      vectors: {};
-      shard_number: number;
-      replication_factor: number;
-      write_consistency_factor: number;
-      on_disk_payload: boolean;
-    };
-    hnsw_config: {
-      m: number;
-      ef_construct: number;
-      full_scan_threshold: number;
-      max_indexing_threads: number;
-      on_disk: boolean;
-    };
-    optimizer_config: {
-      deleted_threshold: number;
-      vacuum_min_vector_number: number;
-      default_segment_number: number;
-      max_segment_size: null;
-      memmap_threshold: null;
-      indexing_threshold: number;
-      flush_interval_sec: number;
-      max_optimization_threads: null;
-    };
-    wal_config: {
-      wal_capacity_mb: number;
-      wal_segments_ahead: number;
-    };
-    quantization_config: null;
-    strict_mode_config: {
-      enabled: boolean;
-    };
-  };
-  payload_schema: {};
-};

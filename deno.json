@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "store": "deno run --allow-net --allow-read --watch bin/store.ts",
+    "store": "deno run --allow-net --allow-read --watch bin/store-service.ts",
     "reader": "deno run --allow-net bin/reader.ts",
     "writer": "deno run --allow-net --allow-read bin/writer.ts"
   },

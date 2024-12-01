@@ -14,7 +14,7 @@ export async function splitContent(content: string) {
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000,
     chunkOverlap: 200,
-    separators: ["\n\n", "\n", " ", "|", "##", ">"],
+    separators: ["\n\n", "\n", " ", "|", "##"],
   });
   const lcDocs = await splitter.splitDocuments([
     new LangChainDoc({ pageContent: content }),

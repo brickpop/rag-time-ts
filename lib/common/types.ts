@@ -23,3 +23,8 @@ export type JsonValue =
   | JsonLiteral;
 
 export type VectorStoreEngine = (typeof VECTOR_STORE_ENGINES)[number];
+
+export type ContextResponse = {
+  content: string;
+  metadata: { loc: { lines: { from: number; to: number } } };
+};

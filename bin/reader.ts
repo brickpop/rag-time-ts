@@ -4,9 +4,9 @@ import { handleQuestion } from "../lib/reader/generation.ts";
 
 const QUESTIONS = [
   // "What is Chain of thought prompting?",
-  // "What are the types of agent memory?",
+  "What are the types of agent memory?",
   // "Who was the last tennis player to win the Roland Garros trophy?",
-  "Who is John Smith?",
+  // "Who is John Smith?",
   // "Who is Jane Smith?",
   // "Write a nostalgic punk poem based on all the available facts about Jane Smith.",
   // "Write a court appeal in French, listing all the evidence available about Jane Smith. Do your absolute best to persuade the court that these facts prove that she was not involved in the alien incident where she allegedly stole 27 BTC.",
@@ -26,7 +26,7 @@ async function main() {
   for (const question of QUESTIONS) {
     const response = await handleQuestion(params.storeUrl, question);
 
-    console.log("Q:", question);
+    console.log("---\nQ:", question);
     process.stdout.write("A: ");
     for await (const part of response) {
       process.stdout.write(part.message.content);

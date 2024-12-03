@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "store": "deno run --allow-net --allow-read --watch bin/store-service.ts",
+    "store": "deno run --allow-net --allow-read --allow-env --watch bin/store-service.ts",
     "reader": "deno run --allow-net bin/reader.ts",
     "writer": "deno run --allow-net --allow-read bin/writer.ts"
   },
@@ -11,6 +11,6 @@
     "chromadb": "npm:chromadb@^1.9.1",
     "ollama": "npm:ollama@^0.5.9",
     "@qdrant/js-client-rest": "https://esm.sh/@qdrant/js-client-rest@1.12.0",
-    "cheerio": "https://esm.sh/cheerio@1.0.0-rc.12"
+    "cheerio": "https://esm.sh/cheerio@1.0.0-rc.13"
   }
 }

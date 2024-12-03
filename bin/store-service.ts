@@ -74,7 +74,7 @@ function getParameters() {
 
 function showHelp() {
   console.log(`Usage:
-$ deno run --allow-net bin/core.ts -p <port> --store-url <url> --auth-token <token>`);
+$ deno run --allow-net bin/store-service.ts -p <port> --store-url <url> --auth-token <token>`);
 }
 
 // Main
